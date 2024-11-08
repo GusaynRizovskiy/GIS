@@ -41,8 +41,8 @@ def on_click(event):
             row2, col2 = coords_to_indices(*points[1])
 
             # Генерация линейных индексов между двумя точками
-            rows = np.linspace(row1, row2, num=100).astype(int)
-            cols = np.linspace(col1, col2, num=100).astype(int)
+            rows = np.linspace(row1, row2, num=5000).astype(int)
+            cols = np.linspace(col1, col2, num=5000).astype(int)
 
             # Ограничение индексов для предотвращения выхода за границы массива
             rows = np.clip(rows, 0, band1.shape[0] - 1)
