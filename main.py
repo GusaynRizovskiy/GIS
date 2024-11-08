@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import mplcursors
 
-# Путь к вашему файлу TIFF
+# Путь к вашему файлу TIFF.
 tif_path = 'srtm_46_01/srtm_46_01.tif'
 
 # Открываем растровый файл
