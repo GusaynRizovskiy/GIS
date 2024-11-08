@@ -35,14 +35,14 @@ def on_click(event):
         plt.scatter(x, y, color='red')  # Отметим выбранную точку на графике
         plt.draw()
 
-        # Если выбраны две точки, извлекаем высоты
+        # Если выбраны две точки, извлекаем высоты и строим профиль
         if len(points) == 2:
             row1, col1 = coords_to_indices(*points[0])
             row2, col2 = coords_to_indices(*points[1])
 
             # Генерация линейных индексов между двумя точками
-            rows = np.linspace(row1, row2, num=5000).astype(int)
-            cols = np.linspace(col1, col2, num=5000).astype(int)
+            rows = np.linspace(row1, row2, num=500).astype(int)
+            cols = np.linspace(col1, col2, num=500).astype(int)
 
             # Ограничение индексов для предотвращения выхода за границы массива
             rows = np.clip(rows, 0, band1.shape[0] - 1)
@@ -51,9 +51,14 @@ def on_click(event):
             # Извлечение высот между двумя точками
             elevations = band1[rows, cols]
 
-            # Вывод результатов
-            for i in range(len(elevations)):
-                print(f"Высота в точке {i + 1}: {elevations[i]} м")
+            # Построение профиля местности
+            plt.figure(figsize=(10, 5))
+            plt.plot(elevations)
+            plt.title('Профиль местности')
+            plt.xlabel('Позиция вдоль линии (пиксели)')
+            plt.ylabel('Высота (м)')
+            plt.grid()
+            plt.show()
 
 
 # Отображаем данные с помощью matplotlib
