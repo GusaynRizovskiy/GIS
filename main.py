@@ -24,7 +24,7 @@ class ElevationProfile:
         row1, col1 = ~self.transform * point1
         row2, col2 = ~self.transform * point2
 
-        # Проверка на допустимые индексы
+        # Проверка на допустимые индексы.
         rows = np.clip(np.linspace(int(row1), int(row2), num=100).astype(int), 0, self.data.shape[0] - 1)
         cols = np.clip(np.linspace(int(col1), int(col2), num=100).astype(int), 0, self.data.shape[1] - 1)
 
