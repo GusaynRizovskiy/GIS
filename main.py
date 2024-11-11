@@ -47,13 +47,12 @@ def on_click(event):
             row2, col2 = coords_to_indices(*points[1])
 
             # Генерация линейных индексов между двумя точками
-            rows = np.linspace(row1, row2, num=1000).astype(int)
-            cols = np.linspace(col1, col2, num=1000).astype(int)
+            rows = np.linspace(row1, row2, num=4000).astype(int)
+            cols = np.linspace(col1, col2, num=4000).astype(int)
 
             # Ограничение индексов для предотвращения выхода за границы массива
             rows = np.clip(rows, 0, band1.shape[0] - 1)
             cols = np.clip(cols, 0, band1.shape[1] - 1)
-
             # Извлечение высот между двумя точками
             elevations = band1[rows, cols]
 
