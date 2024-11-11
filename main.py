@@ -1,9 +1,13 @@
 import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+import pandas as pd
+from tkinter import Tk
+from tkinter import filedialog
 
 # Путь к вашему TIFF файлу
-tif_path = 'srtm_46_01/srtm_46_01.tif'  # Замените на путь к вашему TIFF файлу
+tif_path = tif_path = filedialog.askopenfilename(title="Выберите файл", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
 
 # Открываем TIFF файл
 with rasterio.open(tif_path) as src:
@@ -19,7 +23,6 @@ points = []
 def coords_to_indices(lat, lon):
     row, col = ~transform * (lon, lat)  # Преобразование
     return int(row), int(col)
-
 
 # Функция для обработки клика мыши
 def on_click(event):
@@ -73,3 +76,7 @@ plt.ylabel('Пиксели по Y')
 cid = plt.gcf().canvas.mpl_connect('button_press_event', on_click)
 
 plt.show()
+
+# Инициализация Tkinter
+root = Tk()
+root.withdraw()  # Скрыть главное окно
