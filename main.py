@@ -15,8 +15,7 @@ with rasterio.open(tif_path) as src:
     band1 = src.read(1)
     transform = src.transform
     # Получаем разрешение (метры на пиксель)
-    resolution_x, resolution_y = src.res  # Получаем разрешение по осям X и Y
-    resolution = (resolution_x + resolution_y) / 2  # Среднее разрешение
+    resolution = 30  # Среднее разрешение
     print(resolution)
 
 # Список для хранения выбранных точек
@@ -48,8 +47,8 @@ def on_click(event):
             row2, col2 = coords_to_indices(*points[1])
 
             # Генерация линейных индексов между двумя точками
-            rows = np.linspace(row1, row2, num=500).astype(int)
-            cols = np.linspace(col1, col2, num=500).astype(int)
+            rows = np.linspace(row1, row2, num=1000).astype(int)
+            cols = np.linspace(col1, col2, num=1000).astype(int)
 
             # Ограничение индексов для предотвращения выхода за границы массива
             rows = np.clip(rows, 0, band1.shape[0] - 1)
@@ -70,7 +69,8 @@ def on_click(event):
             point1 = (A[0],A[1])
             point2 = (A[2],A[3])
             distance = calculate_distance(point1, point2, resolution)
-            print(f"Расстояние между точками: {distance:.2f} метров")
+            distance = distance/1000
+            print(f"Расстояние между точками: {distance} километров")
             # Построение профиля местности
             plt.figure(figsize=(10, 5))
             plt.plot(elevations)
