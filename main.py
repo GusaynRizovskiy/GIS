@@ -14,10 +14,13 @@ with rasterio.open(tif_path) as src:
     # Читаем данные первого канала (или нужного вам слоя)
     band1 = src.read(1)
     transform = src.transform
+    # Получаем разрешение (метры на пиксель)
+    resolution_x, resolution_y = src.res  # Получаем разрешение по осям X и Y
+    resolution = (resolution_x + resolution_y) / 2  # Среднее разрешение
+    print(resolution)
 
 # Список для хранения выбранных точек
 points = []
-
 
 # Функция для преобразования географических координат в индексы пикселей
 def coords_to_indices(lat, lon):
@@ -29,7 +32,8 @@ def on_click(event):
     if event.inaxes is not None and event.button == 1:  # Обрабатываем только левую кнопку мыши
         # Получаем координаты клика
         x, y = event.xdata, event.ydata
-
+        A.append(x)
+        A.append(y)
         # Преобразуем пиксельные координаты в географические координаты
         lon, lat = transform * (x, y)
 
@@ -54,6 +58,19 @@ def on_click(event):
             # Извлечение высот между двумя точками
             elevations = band1[rows, cols]
 
+            def calculate_distance(pixel1, pixel2, resolution):
+                # Вычисляем расстояние в пикселях
+                distance_in_pixels = np.sqrt((pixel2[0] - pixel1[0]) ** 2 + (pixel2[1] - pixel1[1]) ** 2)
+                # Преобразуем расстояние в метры
+                distance_in_meters = distance_in_pixels * resolution
+                return distance_in_meters
+
+            # Вычисляем расстояние между двумя пикселями
+
+            point1 = (A[0],A[1])
+            point2 = (A[2],A[3])
+            distance = calculate_distance(point1, point2, resolution)
+            print(f"Расстояние между точками: {distance:.2f} метров")
             # Построение профиля местности
             plt.figure(figsize=(10, 5))
             plt.plot(elevations)
@@ -72,6 +89,7 @@ plt.title('Карта высот')
 plt.xlabel('Пиксели по X')
 plt.ylabel('Пиксели по Y')
 
+A = []
 # Подписываем обработчик клика мыши
 cid = plt.gcf().canvas.mpl_connect('button_press_event', on_click)
 
