@@ -1,99 +1,108 @@
 import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-import pandas as pd
-from tkinter import Tk
-from tkinter import filedialog
 
-# Путь к вашему TIFF файлу
-tif_path = tif_path = filedialog.askopenfilename(title="Выберите файл", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
-
-# Открываем TIFF файл
-with rasterio.open(tif_path) as src:
-    # Читаем данные первого канала (или нужного вам слоя)
-    band1 = src.read(1)
-    transform = src.transform
-    # Получаем разрешение (метры на пиксель)
-    resolution = 30  # Среднее разрешение
-    print(resolution)
-
-# Список для хранения выбранных точек
+# Глобальные переменные для хранения координат точек
 points = []
 
-# Функция для преобразования географических координат в индексы пикселей
-def coords_to_indices(lat, lon):
-    row, col = ~transform * (lon, lat)  # Преобразование
-    return int(row), int(col)
 
-# Функция для обработки клика мыши
-def on_click(event):
-    if event.inaxes is not None and event.button == 1:  # Обрабатываем только левую кнопку мыши
-        # Получаем координаты клика
-        x, y = event.xdata, event.ydata
-        A.append(x)
-        A.append(y)
-        # Преобразуем пиксельные координаты в географические координаты
-        lon, lat = transform * (x, y)
+def onclick(event):
+    """
+    Обработчик клика мыши для выбора точек.
+    """
+    if event.xdata is not None and event.ydata is not None:
+        points.append((event.ydata, event.xdata))  # Сохраняем (row, col)
+        print(f"Точка выбрана: {event.ydata}, {event.xdata}")
 
-        points.append((lat, lon))  # Сохраняем точку
-
-        plt.scatter(x, y, color='red')  # Отметим выбранную точку на графике
-        plt.draw()
-
-        # Если выбраны две точки, извлекаем высоты и строим профиль
+        # Если выбрано 2 точки, закрываем окно
         if len(points) == 2:
-            row1, col1 = coords_to_indices(*points[0])
-            row2, col2 = coords_to_indices(*points[1])
-
-            # Генерация линейных индексов между двумя точками
-            rows = np.linspace(row1, row2, num=4000).astype(int)
-            cols = np.linspace(col1, col2, num=4000).astype(int)
-
-            # Ограничение индексов для предотвращения выхода за границы массива
-            rows = np.clip(rows, 0, band1.shape[0] - 1)
-            cols = np.clip(cols, 0, band1.shape[1] - 1)
-            # Извлечение высот между двумя точками
-            elevations = band1[rows, cols]
-
-            def calculate_distance(pixel1, pixel2, resolution):
-                # Вычисляем расстояние в пикселях
-                distance_in_pixels = np.sqrt((pixel2[0] - pixel1[0]) ** 2 + (pixel2[1] - pixel1[1]) ** 2)
-                # Преобразуем расстояние в метры
-                distance_in_meters = distance_in_pixels * resolution
-                return distance_in_meters
-
-            # Вычисляем расстояние между двумя пикселями
-
-            point1 = (A[0],A[1])
-            point2 = (A[2],A[3])
-            distance = calculate_distance(point1, point2, resolution)
-            distance = distance/1000
-            print(f"Расстояние между точками: {distance} километров")
-            # Построение профиля местности
-            plt.figure(figsize=(10, 5))
-            plt.plot(elevations)
-            plt.title('Профиль местности')
-            plt.xlabel('Позиция вдоль линии (пиксели)')
-            plt.ylabel('Высота (м)')
-            plt.grid()
-            plt.show()
+            plt.close()
 
 
-# Отображаем данные с помощью matplotlib
-plt.figure(figsize=(10, 10))
-plt.imshow(band1, cmap='terrain')  # Используем цветовую карту 'terrain'
-plt.colorbar(label='Высота (м)')  # Добавляем цветовую шкалу
-plt.title('Карта высот')
-plt.xlabel('Пиксели по X')
-plt.ylabel('Пиксели по Y')
+def seconds_to_meters(arc_seconds, radius=6371000):
+    """
+    Переводит угловые секунды в метры.
 
-A = []
-# Подписываем обработчик клика мыши
-cid = plt.gcf().canvas.mpl_connect('button_press_event', on_click)
+    :param arc_seconds: Количество угловых секунд.
+    :param radius: Радиус Земли в метрах (по умолчанию 6371000 м).
+    :return: Расстояние в метрах.
+    """
+    # Переводим угловые секунды в радианы
+    radians = arc_seconds * (np.pi / 648000)
 
-plt.show()
+    # Вычисляем линейное расстояние
+    distance = radius * radians
+    return distance
 
-# Инициализация Tkinter
-root = Tk()
-root.withdraw()  # Скрыть главное окно
+def extract_elevation_profile(tif_file, points):
+    """
+    Извлекает профиль высоты между двумя точками из растрового файла .tif.
+
+    :param tif_file: Путь к файлу .tif.
+    :param points: Список координат двух точек (row, col).
+    :return: Профиль высоты.
+    """
+    with rasterio.open(tif_file) as src:
+        elevation_data = src.read(1)  # Чтение первого канала (высоты)
+
+        # Получаем индексы пикселей
+        row1, col1 = map(int, points[0])
+        row2, col2 = map(int, points[1])
+
+        # Генерируем линейные индексы между двумя точками
+        rows = np.linspace(row1, row2, num=100).astype(int)
+        cols = np.linspace(col1, col2, num=100).astype(int)
+
+        # Извлекаем высоты по линейным индексам
+        elevations = elevation_data[rows, cols]
+
+    return elevations
+
+
+# Укажите путь к вашему файлу .tif
+tif_file_path = 'srtm_46_01/srtm_46_01.tif'
+
+# Отображение карты
+with rasterio.open(tif_file_path) as src:
+    elevation_data = src.read(1)
+    width = src.width  # Ширина в пикселях
+    height = src.height  # Высота в пикселях
+    crs = src.crs  # Система координат
+    transform = src.transform  # Трансформация (Affine)
+    resolution = src.res  # Разрешение в угловых секундах
+
+    # Переводим разрешение из угловых секунд в метры
+    resolution_meters_x = seconds_to_meters(resolution[0])
+    resolution_meters_y = seconds_to_meters(resolution[1])
+
+    plt.figure(figsize=(10, 6))
+    plt.imshow(elevation_data, cmap='terrain', interpolation='nearest', aspect='auto')
+    plt.colorbar(label='Elevation (meters)')
+    plt.title('Выберите две точки на карте для построения профиля местности')
+
+    # Подключаем обработчик кликов
+    cid = plt.gcf().canvas.mpl_connect('button_press_event', onclick)
+
+    plt.show()
+
+# Проверяем, выбраны ли две точки
+if len(points) == 2:
+    # Извлечение профиля высоты
+    elevation_profile = extract_elevation_profile(tif_file_path, points)
+
+    # Вывод извлеченных параметров
+    print(f'Размер карты: {width} пикселей (ширина) x {height} пикселей (высота)')
+    print(f'Система координат: {crs}')
+    print(f'Трансформация: {transform}')
+    print(f'Разрешение: {resolution_meters_x:.6f} м по оси X и {resolution_meters_y:.6f} м по оси Y')
+
+    # Построение графика профиля высоты
+    plt.figure(figsize=(10, 6))
+    plt.plot(elevation_profile)
+    plt.title('Профиль высоты между двумя выбранными точками')
+    plt.xlabel('Сегменты расстояния')
+    plt.ylabel('Высота (метры)')
+    plt.grid()
+    plt.show()
+else:
+    print("Необходимо выбрать две точки.")
